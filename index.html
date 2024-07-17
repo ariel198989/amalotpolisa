@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מחשבון עמלות פוליסת חסכון</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2980b9;
+            --background-color: #ecf0f1;
+            --text-color: #2c3e50;
+            --border-radius: 8px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        #clientList {
+            margin-top: 30px;
+            border-top: 1px solid #bdc3c7;
+            padding-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: right;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .credit {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>מחשבון עמלות פוליסת חסכון</h1>
+        
+        <div class="form-group">
+            <label for="date">תאריך:</label>
+            <input type="date" id="date">
+        </div>
+
+        <div class="form-group">
+            <label for="clientName">שם הלקוח:</label>
+            <input type="text" id="clientName">
+        </div>
+        
+        <div class="form-group">
+            <label for="company">חברת ביטוח:</label>
+            <select id="company">
+                <option value="הראל">הראל</option>
+                <option value="כלל">כלל</option>
+                <option value="מנורה">מנורה</option>
+                <option value="הפניקס">הפניקס</option>
+                <option value="מגדל">מגדל</option>
+                <option value="איילון">איילון</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="amount">סכום ההפקדה (בש"ח):</label>
+            <input type="number" id="amount" min="0" step="1000">
+        </div>
+        
+        <button onclick="addClient()">הוסף לקוח לרשימה</button>
+        <button onclick="downloadExcel()">הורד כקובץ אקסל</button>
+        <button onclick="sendToWhatsApp()">שלח לוואטסאפ</button>
+        <button onclick="clearAllData()">נקה את כל הנתונים</button>
+        
+        <div id="clientList">
+            <h2>רשימת לקוחות ועמלות</h2>
+            <table id="clientTable">
+                <thead>
+                    <tr>
+                        <th>תאריך</th>
+                        <th>שם הלקוח</th>
+                        <th>חברת ביטוח</th>
+                        <th>סכום הפקדה</th>
+                        <th>עמלת היקף</th>
+                        <th>עמלת נפרעים</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="credit">
+            כל הזכויות שמורות לאריאל אוחיון
+        </div>
+    </div>
+
+    <script>
+        let clients = [];
+
+        function addClient() {
+            const date = document.getElementById('date').value;
+            const clientName = document.getElementById('clientName').value;
+            const company = document.getElementById('company').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            
+            if (date && clientName && company && amount && !isNaN(amount)) {
+                const scopeCommission = (amount / 1000000) * 7000;
+                const monthlyCommission = (amount / 1000000) * 300;
+                
+                clients.push({
+                    date,
+                    name: clientName,
+                    company,
+                    amount,
+                    scopeCommission,
+                    monthlyCommission
+                });
+                
+                updateClientList();
+                
+                // Clear input fields
+                document.getElementById('date').value = '';
+                document.getElementById('clientName').value = '';
+                document.getElementById('amount').value = '';
+            } else {
+                alert('נא למלא את כל השדות בצורה תקינה');
+            }
+        }
+        
+        function updateClientList() {
+            const tableBody = document.querySelector('#clientTable tbody');
+            tableBody.innerHTML = '';
+            
+            clients.forEach((client) => {
+                const row = tableBody.insertRow();
+                row.insertCell(0).textContent = client.date;
+                row.insertCell(1).textContent = client.name;
+                row.insertCell(2).textContent = client.company;
+                row.insertCell(3).textContent = client.amount.toLocaleString() + ' ₪';
+                row.insertCell(4).textContent = client.scopeCommission.toLocaleString() + ' ₪';
+                row.insertCell(5).textContent = client.monthlyCommission.toLocaleString() + ' ₪';
+            });
+        }
+        
+        function downloadExcel() {
+            if (clients.length === 0) {
+                alert('אין נתונים להורדה. נא להוסיף לקוחות תחילה.');
+                return;
+            }
+            
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            csvContent += "תאריך,שם הלקוח,חברת ביטוח,סכום הפקדה,עמלת היקף,עמלת נפרעים\n";
+            
+            clients.forEach((client) => {
+                const row = [
+                    client.date,
+                    client.name,
+                    client.company,
+                    client.amount,
+                    client.scopeCommission,
+                    client.monthlyCommission
+                ].join(",");
+                csvContent += row + "\n";
+            });
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "עמלות_פוליסת_חסכון.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function sendToWhatsApp() {
+            if (clients.length === 0) {
+                alert('אין נתונים לשליחה. נא להוסיף לקוחות תחילה.');
+                return;
+            }
+            
+            let message = "סיכום עמלות פוליסת חסכון:\n\n";
+            clients.forEach((client, index) => {
+                message += `${index + 1}. ${client.name} (${client.company}) - ${client.date}:\n`;
+                message += `   סכום הפקדה: ${client.amount.toLocaleString()} ₪\n`;
+                message += `   עמלת היקף: ${client.scopeCommission.toLocaleString()} ₪\n`;
+                message += `   עמלת נפרעים: ${client.monthlyCommission.toLocaleString()} ₪\n\n`;
+            });
+            
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappLink = `https://wa.me/972545425189?text=${encodedMessage}`;
+            window.open(whatsappLink, '_blank');
+        }
+        
+        function clearAllData() {
+            document.getElementById('date').value = '';
+            document.getElementById('clientName').value = '';
+            document.getElementById('company').selectedIndex = 0;
+            document.getElementById('amount').value = '';
+            clients = [];
+            updateClientList();
+        }
+
+        // Set default date to today
+        document.getElementById('date').valueAsDate = new Date();
+    </script>
+</body>
+</html>
